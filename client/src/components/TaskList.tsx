@@ -3,9 +3,10 @@ import { type Task, type TaskStatus, TASK_STATUSES } from '../types/task';
 type TaskListProps = {
     tasks: Task[];
     onStatusChange: (id: string, status: TaskStatus) => void;
+    onDeleteTask: (id: string) => void;
 }
 
-export function TaskList({ tasks, onStatusChange }: TaskListProps) {
+export function TaskList({ tasks, onStatusChange, onDeleteTask }: TaskListProps) {
 
     return (
             tasks.length === 0 ? <p>No tasks yet</p>
@@ -20,6 +21,7 @@ export function TaskList({ tasks, onStatusChange }: TaskListProps) {
                                 <option key={status} value={status}>{status}</option>
                             ))}
                         </select>
+                        <button type="button" onClick={() => onDeleteTask(task.id)}>Delete</button>
                     </li>
             ))}
             </ul>
