@@ -15,10 +15,14 @@ function App() {
     setTasks(tasks => tasks.map(task => task.id === id ? {...task, status} : task))
   }
 
+  const handleTaskDelete = (id: string) => {
+    setTasks(tasks => tasks.filter(task => task.id !== id));
+  }
+
   return (
     <div>
       <QuickAdd onAddTask={handleTaskAdd}/>
-      <TaskList tasks={tasks} onStatusChange={handleStatusChange} />
+      <TaskList tasks={tasks} onStatusChange={handleStatusChange} onDeleteTask={handleTaskDelete} />
     </div>
   )
 }
