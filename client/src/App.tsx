@@ -2,7 +2,7 @@ import './App.css'
 import { useState } from 'react';
 import { QuickAdd } from './components/QuickAdd';
 import { TaskList } from './components/TaskList';
-import type { Task, TaskStatus } from './types/task'
+import type { Task, TaskStatus, TaskPriority } from './types/task'
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,10 +19,14 @@ function App() {
     setTasks(tasks => tasks.filter(task => task.id !== id));
   }
 
+  const handleTaskEdit = (id: string, title: string, priority: TaskPriority) => {
+    setTasks(tasks => tasks.map(task => task.id === id ? {...task, title, priority} : task))
+  }
+
   return (
     <div>
       <QuickAdd onAddTask={handleTaskAdd}/>
-      <TaskList tasks={tasks} onStatusChange={handleStatusChange} onDeleteTask={handleTaskDelete} />
+      <TaskList tasks={tasks} onStatusChange={handleStatusChange} onDeleteTask={handleTaskDelete} onEditTask={handleTaskEdit} />
     </div>
   )
 }
