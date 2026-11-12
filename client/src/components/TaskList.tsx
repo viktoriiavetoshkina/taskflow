@@ -5,21 +5,23 @@ type TaskListProps = {
     tasks: Task[];
     onStatusChange: (id: string, status: TaskStatus) => void;
     onDeleteTask: (id: string) => void;
-    onEditTask: (id: string, title: string, priority: TaskPriority) => void;
+    onEditTask: (id: string, title: string, priority: TaskPriority, dueDate: string) => void;
 }
 
 export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: TaskListProps) {
     const [editTitle, setEditTitle] = useState('');
     const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
+    const [editDueDate, setEditDueDate] = useState('');
     const [currentId, setCurrentId] = useState<string | null>(null);
 
     const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>, id: string) => {
         e.preventDefault();
         const cleanTitle = editTitle.trim()
         if(cleanTitle !== '') {
-            onEditTask(id, cleanTitle, editPriority);
+            onEditTask(id, cleanTitle, editPriority, editDueDate);
             setEditTitle('');
             setEditPriority('medium');
+            setEditDueDate('');
             setCurrentId(null);
         }
     }
@@ -33,6 +35,7 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
                         <h3>Title: {task.title}</h3> 
                         <p>Status: {task.status}</p> 
                         <p>Priority: {task.priority}</p>
+                        <p>Date: {task.dueDate === null ? 'No due date' : task.dueDate}</p>
                         <select value={task.status} onChange={e => onStatusChange(task.id, e.target.value as TaskStatus)}>
                             {TASK_STATUSES.map(status => (
                                 <option key={status} value={status}>{status}</option>
@@ -43,6 +46,7 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
                             setCurrentId(task.id);
                             setEditTitle(task.title);
                             setEditPriority(task.priority);
+                            setEditDueDate(task.dueDate ?? '');
                             }}>Edit</button>
                             </div>)
                         : (<form onSubmit={e => handleSubmit(e, task.id)}>
@@ -54,11 +58,13 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
                                         <option key={priority} value={priority}>{priority}</option>
                                     ))}
                                 </select>
+                                <input value={editDueDate} onChange={e => setEditDueDate(e.target.value)} type="date" />
                                 <button type="submit">Save</button>
                                 <button type="button" onClick={() => {
                                     setEditTitle('');
                                     setEditPriority('medium');
                                     setCurrentId(null);
+                                    setEditDueDate('');
                                 }}>Cancel</button>
                          </form>)}
                         </li>  

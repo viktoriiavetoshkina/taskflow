@@ -8,6 +8,7 @@ export type Task = {
     title: string;
     status: TaskStatus;
     priority: TaskPriority;
+    dueDate: string | null;
 }
 
 
