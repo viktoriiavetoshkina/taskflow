@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 type QuickAddProps = {
-    onAddTask: (title: string, date: string) => void;
+    onAddTask: (title: string, dueDate: string) => void;
 }
 
 export function QuickAdd({ onAddTask }: QuickAddProps) {
