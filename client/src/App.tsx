@@ -1,11 +1,16 @@
 import './App.css'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QuickAdd } from './components/QuickAdd';
 import { TaskList } from './components/TaskList';
-import type { Task, TaskStatus, TaskPriority } from './types/task'
+import { loadTasks, saveTasks } from './components/taskStorage';
+import type { TaskStatus, TaskPriority } from './types/task'
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState(() => loadTasks());
+
+  useEffect(() => {
+    saveTasks(tasks)
+  }, [tasks])
 
   const handleTaskAdd = (title: string, dueDate: string) => {
     setTasks(tasks => [{id: crypto.randomUUID(), title, status: 'todo', priority: 'medium', dueDate: dueDate === '' ? null : dueDate}, ...tasks])
