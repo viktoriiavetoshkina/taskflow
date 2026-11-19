@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { type Task, type TaskStatus, type TaskPriority, TASK_PRIORITIES, TASK_STATUSES } from '../types/task';
 import { formatLocalDate, groupTasksByDueDate, filterTasks } from '../utils/taskUtils';
+import { TaskItem } from './TaskItem';
 
 type TaskListProps = {
     tasks: Task[];
@@ -10,9 +11,6 @@ type TaskListProps = {
 }
 
 export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: TaskListProps) {
-    const [editTitle, setEditTitle] = useState('');
-    const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
-    const [editDueDate, setEditDueDate] = useState('');
     const [currentId, setCurrentId] = useState<string | null>(null);
     const [curDate] = useState(() => new Date());
     const [status, setStatus] = useState<TaskStatus | 'all'>('all');
@@ -32,61 +30,6 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
     const upcomingDates = Object.keys(groups.upcoming).sort();
 
 
-    const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>, id: string) => {
-        e.preventDefault();
-        const cleanTitle = editTitle.trim()
-        if(cleanTitle !== '') {
-            onEditTask(id, cleanTitle, editPriority, editDueDate);
-            setEditTitle('');
-            setEditPriority('medium');
-            setEditDueDate('');
-            setCurrentId(null);
-        }
-    }
-
-    const renderTask = (task: Task) => (
-    <li key={task.id}>
-        {currentId !== task.id
-            ? (<div>
-            <h3>{task.title}</h3> 
-            <p>Status: {task.status}</p> 
-            <p>Priority: {task.priority}</p>
-            <p>Date: {task.dueDate === null ? 'No due date' : task.dueDate}</p>
-            <label htmlFor={`${task.id}-status`}> Change status: </label>
-            <select id={`${task.id}-status`} value={task.status} onChange={e => onStatusChange(task.id, e.target.value as TaskStatus)}>
-                {TASK_STATUSES.map(status => (
-                    <option key={status} value={status}>{status}</option>
-                ))}
-            </select>
-            <button type="button" onClick={() => onDeleteTask(task.id)}>Delete</button>
-            <button type="button" onClick={() => {
-                setCurrentId(task.id);
-                setEditTitle(task.title);
-                setEditPriority(task.priority);
-                setEditDueDate(task.dueDate ?? '');
-            }}>Edit</button>
-            </div>)
-            : (<form onSubmit={e => handleSubmit(e, task.id)}>
-            <label htmlFor={`${task.id}-title`}> Title: </label>
-            <input id={`${task.id}-title`} value={editTitle} onChange={e => setEditTitle(e.target.value)} />
-            <label htmlFor={`${task.id}-priority`}> Priority: </label>
-            <select id={`${task.id}-priority`} value={editPriority} onChange={e => setEditPriority(e.target.value as TaskPriority)}>
-                {TASK_PRIORITIES.map(priority => (
-                    <option key={priority} value={priority}>{priority}</option>
-                ))}
-            </select>
-            <label htmlFor={`${task.id}-dueDate`}> Date: </label>
-            <input id={`${task.id}-dueDate`} value={editDueDate} onChange={e => setEditDueDate(e.target.value)} type="date" />
-            <button type="submit">Save</button>
-            <button type="button" onClick={() => {
-                setEditTitle('');
-                setEditPriority('medium');
-                setCurrentId(null);
-                setEditDueDate('');
-            }}>Cancel</button>
-            </form>)}
-    </li>
-);
 
     const renderTaskGroup = (
         title: string,
@@ -99,7 +42,9 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
             <section key={key}>
                 <h2>{title}</h2>
                 <ul>
-                    {groupTasks.map(renderTask)}
+                    {groupTasks.map((task) => (
+                        <TaskItem key={task.id} task={task} isEditing={currentId === task.id} onStartEdit={(id) => setCurrentId(id)} onCancelEdit={() => setCurrentId(null)} onStatusChange={onStatusChange} onDeleteTask={onDeleteTask} onEditTask={onEditTask} />
+                    ))}
                 </ul>
             </section>
         );
