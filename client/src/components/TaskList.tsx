@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { type Task, type TaskStatus, type TaskPriority, TASK_PRIORITIES, TASK_STATUSES } from '../types/task';
+import { formatLocalDate, groupTasksByDueDate, filterTasks } from '../utils/taskUtils';
 
 type TaskListProps = {
     tasks: Task[];
@@ -8,62 +9,14 @@ type TaskListProps = {
     onEditTask: (id: string, title: string, priority: TaskPriority, dueDate: string) => void;
 }
 
-function formatLocalDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-}
-
-
-type TaskGroups = {
-    overdue: Task[];
-    today: Task[];
-    tomorrow: Task[];
-    upcoming: Record<string, Task[]>;
-    noDueDate: Task[];
-};
-
-function groupTasksByDueDate(
-    tasks: Task[],
-    today: string,
-    tomorrow: string
-): TaskGroups {
-    return tasks.reduce<TaskGroups>((groups, task) => {
-
-        if(task.dueDate === null) {
-            groups.noDueDate.push(task);
-        } else if(task.dueDate < today) {
-            groups.overdue.push(task);
-        } else if(task.dueDate === today) {
-            groups.today.push(task);
-        } else if(task.dueDate === tomorrow) {
-            groups.tomorrow.push(task);
-        } else {
-            if(groups.upcoming[task.dueDate]) {
-                groups.upcoming[task.dueDate].push(task);
-            } else {
-                groups.upcoming[task.dueDate] = [task];
-            }
-        }
-
-        return groups;
-    }, {
-        overdue: [],
-        today: [],
-        tomorrow: [],
-        upcoming: {},
-        noDueDate: []
-    });
-}
-
 export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: TaskListProps) {
     const [editTitle, setEditTitle] = useState('');
     const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
     const [editDueDate, setEditDueDate] = useState('');
     const [currentId, setCurrentId] = useState<string | null>(null);
     const [curDate] = useState(() => new Date());
+    const [status, setStatus] = useState<TaskStatus | 'all'>('all');
+    const [priority, setPriority] = useState<TaskPriority | 'all'>('all');
 
     const now = curDate;
     const tomorrowDate = new Date(curDate);
@@ -72,7 +25,9 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
     const today = formatLocalDate(now);
     const tomorrow = formatLocalDate(tomorrowDate);
 
-    const groups = groupTasksByDueDate(tasks, today, tomorrow);
+    const filteredTasks = filterTasks(tasks, status, priority)
+
+    const groups = groupTasksByDueDate(filteredTasks, today, tomorrow);
 
     const upcomingDates = Object.keys(groups.upcoming).sort();
 
@@ -93,11 +48,12 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
     <li key={task.id}>
         {currentId !== task.id
             ? (<div>
-            <h3>Title: {task.title}</h3> 
+            <h3>{task.title}</h3> 
             <p>Status: {task.status}</p> 
             <p>Priority: {task.priority}</p>
             <p>Date: {task.dueDate === null ? 'No due date' : task.dueDate}</p>
-            <select value={task.status} onChange={e => onStatusChange(task.id, e.target.value as TaskStatus)}>
+            <label htmlFor={`${task.id}-status`}> Change status: </label>
+            <select id={`${task.id}-status`} value={task.status} onChange={e => onStatusChange(task.id, e.target.value as TaskStatus)}>
                 {TASK_STATUSES.map(status => (
                     <option key={status} value={status}>{status}</option>
                 ))}
@@ -111,15 +67,16 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
             }}>Edit</button>
             </div>)
             : (<form onSubmit={e => handleSubmit(e, task.id)}>
-            <label>Title: </label>
-            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} />
-            <label>Priority: </label>
-            <select value={editPriority} onChange={e => setEditPriority(e.target.value as TaskPriority)}>
+            <label htmlFor={`${task.id}-title`}> Title: </label>
+            <input id={`${task.id}-title`} value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+            <label htmlFor={`${task.id}-priority`}> Priority: </label>
+            <select id={`${task.id}-priority`} value={editPriority} onChange={e => setEditPriority(e.target.value as TaskPriority)}>
                 {TASK_PRIORITIES.map(priority => (
                     <option key={priority} value={priority}>{priority}</option>
                 ))}
             </select>
-            <input value={editDueDate} onChange={e => setEditDueDate(e.target.value)} type="date" />
+            <label htmlFor={`${task.id}-dueDate`}> Date: </label>
+            <input id={`${task.id}-dueDate`} value={editDueDate} onChange={e => setEditDueDate(e.target.value)} type="date" />
             <button type="submit">Save</button>
             <button type="button" onClick={() => {
                 setEditTitle('');
@@ -150,7 +107,25 @@ export function TaskList({ tasks, onStatusChange, onDeleteTask, onEditTask }: Ta
 
     return (
     <>
+        <fieldset>
+            <legend>Filter tasks</legend>
+            <label htmlFor='filteredStatus'> Filter by status: </label>
+        <select id="filteredStatus" value={status} onChange={e => setStatus(e.target.value as TaskStatus | 'all')}>
+            <option key={'all'} value={'all'}>All</option>
+            {TASK_STATUSES.map(status => (
+                <option key={status} value={status}>{status}</option>
+            ))}
+        </select>
+        <label htmlFor='filteredPriority'> Filter by priority: </label>
+        <select id="filteredPriority" value={priority} onChange={e => setPriority(e.target.value as TaskPriority | 'all')}>
+            <option key={'all'} value={'all'}>All</option>
+            {TASK_PRIORITIES.map(priority => (
+                <option key={priority} value={priority}>{priority}</option>
+            ))}
+        </select>
+        </fieldset>
         {tasks.length === 0 ? <p>No tasks yet</p>
+        : filteredTasks.length === 0 ? <p>No tasks match your filters</p>
         :
         <>
         {renderTaskGroup('Overdue', groups.overdue)}
